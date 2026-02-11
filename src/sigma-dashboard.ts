@@ -6,11 +6,17 @@
  */
 
 import express from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { config } from "./config.js";
 import * as db from "./db.js";
 import { log } from "./logger.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+
+// Serve static files (audio, etc.)
+app.use("/static", express.static(path.join(__dirname, "..", "static")));
 
 function timeAgo(ts: number): string {
   const diff = Date.now() / 1000 - ts;
@@ -369,8 +375,8 @@ tr:hover td { color: #ccc; background: #050505; }
 </div>
 
 <div class="audio-bar">
-  <span class="track-name" id="track-name">No track loaded</span>
-  <audio id="player" controls></audio>
+  <span class="track-name" id="track-name">GLADIATOR -- Rome Ambient</span>
+  <audio id="player" controls loop src="/static/audio/rome_ambient.webm"></audio>
 </div>
 
 <script>
@@ -489,6 +495,17 @@ rotateQuote();
 setInterval(rotateQuote, 8000);
 refresh();
 setInterval(refresh, 5000);
+
+// Autoplay soundtrack on first user interaction (browsers block autoplay)
+var audioStarted = false;
+document.addEventListener('click', function() {
+  if (!audioStarted) {
+    var player = document.getElementById('player');
+    player.volume = 0.3;
+    player.play().catch(function() {});
+    audioStarted = true;
+  }
+}, { once: true });
 </script>
 </body>
 </html>`;
