@@ -36,20 +36,20 @@ export const config = {
     : "https://api.elections.kalshi.com/trade-api/v2",
   wsUrl: "wss://api.elections.kalshi.com/trade-api/ws/v2",
 
-  // Spread & sizing
-  minSpreadThreshold: envNum("MIN_SPREAD_THRESHOLD", 3),  // cents
-  orderSizeDefault: envNum("ORDER_SIZE_DEFAULT", 10),      // contracts
-  maxExposurePerMarket: envNum("MAX_EXPOSURE_PER_MARKET", 50),
-  maxTotalExposure: envNum("MAX_TOTAL_EXPOSURE", 500),     // dollars
+  // Spread & sizing -- aggressive for paper trading data collection
+  minSpreadThreshold: envNum("MIN_SPREAD_THRESHOLD", 1),  // cents (was 3)
+  orderSizeDefault: envNum("ORDER_SIZE_DEFAULT", 25),      // contracts (was 10)
+  maxExposurePerMarket: envNum("MAX_EXPOSURE_PER_MARKET", 200),  // (was 50)
+  maxTotalExposure: envNum("MAX_TOTAL_EXPOSURE", 5000),    // dollars (was 500)
 
   // Timing
-  pairTimeoutSeconds: envNum("PAIR_TIMEOUT_SECONDS", 60),
+  pairTimeoutSeconds: envNum("PAIR_TIMEOUT_SECONDS", 45),  // (was 60)
   resolutionBufferSeconds: envNum("RESOLUTION_BUFFER_SECONDS", 120),
   cancelDeadlineSeconds: envNum("CANCEL_DEADLINE_SECONDS", 90),
-  scanIntervalSeconds: envNum("SCAN_INTERVAL_SECONDS", 15),
+  scanIntervalSeconds: envNum("SCAN_INTERVAL_SECONDS", 10),  // (was 15)
 
-  // Risk
-  maxOneSidedFillsBeforeHalt: envNum("MAX_ONE_SIDED_FILLS_BEFORE_HALT", 3),
+  // Risk -- very lenient for paper mode data collection
+  maxOneSidedFillsBeforeHalt: envNum("MAX_ONE_SIDED_FILLS_BEFORE_HALT", 50),  // (was 3)
 
   // Assets
   assets: envStr("ASSETS", "BTC,ETH,SOL,XRP").split(",").map(a => a.trim()),
