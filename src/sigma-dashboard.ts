@@ -101,6 +101,7 @@ body {
   color: #c8c8c8;
   font-family: 'JetBrains Mono', monospace;
   overflow-x: hidden;
+  padding-bottom: 50px;
 }
 
 /* Scanline overlay */
@@ -117,6 +118,36 @@ body::after {
   );
   pointer-events: none;
   z-index: 9999;
+}
+
+/* Film grain */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%; left: -50%;
+  right: -50%; bottom: -50%;
+  background: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9998;
+  animation: grain 0.5s steps(1) infinite;
+}
+
+@keyframes grain {
+  0% { transform: translate(0,0); }
+  25% { transform: translate(-2px,2px); }
+  50% { transform: translate(2px,-2px); }
+  75% { transform: translate(-2px,-2px); }
+  100% { transform: translate(2px,2px); }
+}
+
+/* Vignette */
+.vignette {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%);
+  pointer-events: none;
+  z-index: 9997;
 }
 
 /* Header */
@@ -182,7 +213,13 @@ body::after {
   border-color: #333;
 }
 
-/* Mode badge */
+/* Mode + status */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .mode-badge {
   font-size: 10px;
   font-weight: 700;
@@ -194,7 +231,35 @@ body::after {
 .mode-badge.paper { background: #1a1a00; color: #f0ad4e; border: 1px solid #333300; }
 .mode-badge.live { background: #1a0000; color: #e50914; border: 1px solid #330000; animation: pulse 2s infinite; }
 
+.sigma-status {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 4px 14px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  transition: all 0.5s;
+}
+
+.sigma-status.grinding { background: #0a0a0a; color: #555; border: 1px solid #1a1a1a; }
+.sigma-status.winning { background: #001a00; color: #00e676; border: 1px solid #003300; text-shadow: 0 0 8px rgba(0,230,118,0.3); }
+.sigma-status.down { background: #1a0000; color: #e50914; border: 1px solid #330000; }
+
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+/* Quote bar - cinematic */
+.quote-bar {
+  padding: 14px 30px;
+  font-size: 11px;
+  color: #2a2a2a;
+  letter-spacing: 2px;
+  font-style: italic;
+  text-align: center;
+  border-bottom: 1px solid #0a0a0a;
+  transition: color 0.8s;
+  min-height: 44px;
+}
 
 /* Stats grid */
 .grid {
@@ -209,7 +274,13 @@ body::after {
 .card {
   background: #0a0a0a;
   padding: 16px;
+  position: relative;
+  overflow: hidden;
 }
+
+/* PnL card glow effect */
+.card.glow-green { box-shadow: inset 0 0 30px rgba(0,230,118,0.05); }
+.card.glow-red { box-shadow: inset 0 0 30px rgba(229,9,20,0.05); }
 
 .card .label {
   font-size: 9px;
@@ -230,14 +301,33 @@ body::after {
 .card .value.red { color: #e50914; }
 .card .value.blue { color: #448aff; }
 
-/* Quote */
-.quote-bar {
-  padding: 8px 30px;
-  font-size: 10px;
-  color: #333;
-  letter-spacing: 1px;
-  font-style: italic;
-  border-top: 1px solid #0a0a0a;
+/* Sigma reaction toast */
+.sigma-reaction {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  color: #fff;
+  text-shadow: 0 0 40px rgba(229,9,20,0.6), 0 0 80px rgba(229,9,20,0.3);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10000;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  text-transform: uppercase;
+}
+
+.sigma-reaction.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.sigma-reaction.fade {
+  opacity: 0;
+  transform: translate(-50%, -60%) scale(1.1);
 }
 
 /* Tables */
@@ -327,9 +417,27 @@ tr:hover td { color: #ccc; background: #050505; }
 }
 
 @keyframes blink { 0%, 90% { opacity: 1; } 95% { opacity: 0; } 100% { opacity: 1; } }
+
+/* Sigma watermark */
+.watermark {
+  position: fixed;
+  bottom: 60px;
+  right: 30px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 80px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.015);
+  letter-spacing: 10px;
+  pointer-events: none;
+  z-index: 1;
+  user-select: none;
+}
 </style>
 </head>
 <body>
+
+<div class="vignette"></div>
+<div class="watermark" id="watermark"></div>
 
 <div class="header">
   <div>
@@ -340,7 +448,8 @@ tr:hover td { color: #ccc; background: #050505; }
     <div class="tab active" onclick="switchBot('kalshi')">KALSHI</div>
     <div class="tab" onclick="switchBot('poly')">POLYMARKET</div>
   </div>
-  <div>
+  <div class="header-right">
+    <span id="sigma-status" class="sigma-status grinding">GRINDING</span>
     <span class="refresh-dot"></span>
     <span id="mode" class="mode-badge paper">PAPER</span>
   </div>
@@ -374,41 +483,121 @@ tr:hover td { color: #ccc; background: #050505; }
   </table>
 </div>
 
+<div class="sigma-reaction" id="reaction"></div>
+
 <div class="audio-bar">
   <span class="track-name" id="track-name">GLADIATOR -- Rome Ambient</span>
   <audio id="player" controls loop src="/static/audio/rome_ambient.webm"></audio>
 </div>
 
 <script>
-const QUOTES = [
+var QUOTES = [
   "I have to return some videotapes.",
   "There is an idea of a Patrick Bateman.",
-  "I'm on the verge of tears as I strain to hold my smile.",
-  "My pain is constant and sharp, and I do not hope for a better world.",
   "I simply am not there.",
+  "This is not an exit.",
+  "I like to dissect girls. Did I say girls? I meant trades.",
+  "Look at that subtle off-white coloring. The tasteful thickness of it.",
+  "I live in the American Gardens Building on West 81st Street.",
   "In this moment, I am euphoric.",
-  "The grind never stops.",
-  "Discipline is the bridge between goals and accomplishment.",
   "While they sleep, we trade.",
+  "The grind never stops. The grind never started. I am the grind.",
+  "Discipline is the bridge between goals and accomplishment.",
   "Not luck. Preparation meeting opportunity.",
-  "The market rewards those who show up.",
   "Sigma rule #1: Let the bots handle it.",
+  "You mirin brah? -- Zyzz",
+  "We're all gonna make it.",
+  "I don't stop when I'm tired. I stop when I'm done.",
+  "Average fan vs average enjoyer.",
+  "Real human bean. And a real hero.",
+  "I drive.",
+  "There's 100 million contracts in this city. And I had to pick this one.",
+  "The market is temporary. The grindset is forever.",
+  "They don't know I'm running two bots.",
 ];
 
-let currentBot = 'kalshi';
-let quoteIdx = 0;
+var SIGMA_REACTIONS = [
+  "TOO SIGMA",
+  "LITERALLY ME",
+  "WE'RE SO BACK",
+  "GIGACHAD",
+  "BASED",
+  "BUILT DIFFERENT",
+];
+
+var COPE_REACTIONS = [
+  "NGMI",
+  "IT'S OVER",
+  "DOWN BAD",
+  "JUST A SCRATCH",
+  "STILL SIGMA",
+  "TEMPORARY SETBACK",
+];
+
+var WATERMARKS = [
+  "SIGMA",
+  "GRIND",
+  "ALPHA",
+  "BASED",
+];
+
+var currentBot = 'kalshi';
+var quoteIdx = 0;
+var lastPnl = null;
+var reactionTimeout = null;
 
 function switchBot(bot) {
   currentBot = bot;
   document.querySelectorAll('.tab').forEach(function(t) {
     t.classList.toggle('active', t.textContent.toLowerCase().includes(bot.substring(0, 4)));
   });
+  showReaction(bot === 'kalshi' ? 'KALSHI MODE' : 'POLY MODE');
   refresh();
 }
 
 function rotateQuote() {
   quoteIdx = (quoteIdx + 1) % QUOTES.length;
-  document.getElementById('quote').textContent = '"' + QUOTES[quoteIdx] + '"';
+  var el = document.getElementById('quote');
+  el.style.color = '#111';
+  setTimeout(function() {
+    el.textContent = '"' + QUOTES[quoteIdx] + '"';
+    el.style.color = '#2a2a2a';
+  }, 400);
+}
+
+function rotateWatermark() {
+  var idx = Math.floor(Math.random() * WATERMARKS.length);
+  document.getElementById('watermark').textContent = WATERMARKS[idx];
+}
+
+function showReaction(text) {
+  var el = document.getElementById('reaction');
+  if (reactionTimeout) clearTimeout(reactionTimeout);
+  el.className = 'sigma-reaction';
+  el.textContent = text;
+  // Force reflow
+  void el.offsetWidth;
+  el.className = 'sigma-reaction show';
+  reactionTimeout = setTimeout(function() {
+    el.className = 'sigma-reaction fade';
+  }, 1200);
+}
+
+function updateSigmaStatus(pnl, pairs) {
+  var el = document.getElementById('sigma-status');
+  if (pnl > 0) {
+    el.textContent = 'WINNING';
+    el.className = 'sigma-status winning';
+  } else if (pnl < 0) {
+    el.textContent = 'DOWN BAD';
+    el.className = 'sigma-status down';
+  } else if (pairs > 0) {
+    el.textContent = 'IN POSITION';
+    el.className = 'sigma-status grinding';
+  } else {
+    el.textContent = 'GRINDING';
+    el.className = 'sigma-status grinding';
+  }
 }
 
 async function refresh() {
@@ -419,12 +608,14 @@ async function refresh() {
     try {
       status = await (await fetch(prefix + '/status')).json();
     } catch(e) {
-      document.getElementById('stats').innerHTML = '<div class="empty-state">BOT OFFLINE -- WAITING FOR CONNECTION</div>';
+      document.getElementById('stats').innerHTML = '<div class="empty-state">BOT OFFLINE -- TEMPORARILY TOUCHING GRASS</div>';
+      updateSigmaStatus(0, 0);
       return;
     }
 
     if (status.error) {
-      document.getElementById('stats').innerHTML = '<div class="empty-state">' + (currentBot === 'poly' ? 'POLYMARKET BOT OFFLINE' : 'KALSHI BOT OFFLINE') + '</div>';
+      document.getElementById('stats').innerHTML = '<div class="empty-state">' + (currentBot === 'poly' ? 'POLYMARKET BOT OFFLINE -- NOT SIGMA ENOUGH' : 'KALSHI BOT OFFLINE -- RECALIBRATING AURA') + '</div>';
+      updateSigmaStatus(0, 0);
       return;
     }
 
@@ -436,8 +627,24 @@ async function refresh() {
     var pnl = status.total_pnl || 0;
     var avg = status.avg_pnl_per_pair || 0;
 
+    // Check for PnL changes and show reactions
+    if (lastPnl !== null && pnl !== lastPnl) {
+      if (pnl > lastPnl) {
+        var idx = Math.floor(Math.random() * SIGMA_REACTIONS.length);
+        showReaction(SIGMA_REACTIONS[idx]);
+      } else if (pnl < lastPnl) {
+        var idx2 = Math.floor(Math.random() * COPE_REACTIONS.length);
+        showReaction(COPE_REACTIONS[idx2]);
+      }
+    }
+    lastPnl = pnl;
+
+    updateSigmaStatus(pnl, status.pairs_open || 0);
+
+    var glowClass = pnl > 0 ? ' glow-green' : (pnl < 0 ? ' glow-red' : '');
+
     document.getElementById('stats').innerHTML =
-      '<div class="card"><div class="label">Total PnL</div><div class="value ' + (pnl >= 0 ? 'green' : 'red') + '">$' + pnl.toFixed(4) + '</div></div>' +
+      '<div class="card' + glowClass + '"><div class="label">Total PnL</div><div class="value ' + (pnl >= 0 ? 'green' : 'red') + '">$' + pnl.toFixed(4) + '</div></div>' +
       '<div class="card"><div class="label">Deployed</div><div class="value blue">$' + (status.total_deployed || 0).toFixed(2) + '</div></div>' +
       '<div class="card"><div class="label">Avg PnL</div><div class="value ' + (avg >= 0 ? 'green' : 'red') + '">$' + avg.toFixed(4) + '</div></div>' +
       '<div class="card"><div class="label">Completed</div><div class="value">' + (status.pairs_completed || 0) + '</div></div>' +
@@ -449,7 +656,7 @@ async function refresh() {
     // Pairs
     try {
       var pairs = await (await fetch(prefix + '/pairs')).json();
-      if (Array.isArray(pairs)) {
+      if (Array.isArray(pairs) && pairs.length > 0) {
         document.querySelector('#pairs-table tbody').innerHTML = pairs.slice(0, 15).map(function(p) {
           var id = (p.pair_id || '').substring(0, 12);
           var market = p.ticker || p.market_question || '';
@@ -459,29 +666,35 @@ async function refresh() {
           var age = p.created_ago || '-';
           return '<tr><td>' + id + '</td><td>' + market + '</td><td>' + asset + '</td><td><span class="status-tag ' + st + '">' + st + '</span></td><td>' + age + '</td></tr>';
         }).join('');
+      } else {
+        document.querySelector('#pairs-table tbody').innerHTML = '<tr><td colspan="5" class="empty-state">No open positions -- patience is sigma</td></tr>';
       }
     } catch(e) {}
 
     // PnL
     try {
       var pnlData = await (await fetch(prefix + '/pnl')).json();
-      if (Array.isArray(pnlData)) {
+      if (Array.isArray(pnlData) && pnlData.length > 0) {
         document.querySelector('#pnl-table tbody').innerHTML = pnlData.slice(0, 15).map(function(p) {
           var rpnl = p.realized_pnl || 0;
           return '<tr><td>' + ((p.pair_id||'').substring(0,12)) + '</td><td>' + (p.ticker || p.market_id || '') + '</td><td>' + (p.yes_fill_price || 0) + '</td><td>' + (p.no_fill_price || 0) + '</td><td>' + (p.size || 0) + '</td><td>$' + (p.fees || 0).toFixed(4) + '</td><td style="color:' + (rpnl >= 0 ? '#00e676' : '#e50914') + '">$' + rpnl.toFixed(4) + '</td></tr>';
         }).join('');
+      } else {
+        document.querySelector('#pnl-table tbody').innerHTML = '<tr><td colspan="7" class="empty-state">No realized PnL yet -- the grind continues</td></tr>';
       }
     } catch(e) {}
 
     // Events
     try {
       var events = await (await fetch(prefix + '/events')).json();
-      if (Array.isArray(events)) {
+      if (Array.isArray(events) && events.length > 0) {
         document.querySelector('#events-table tbody').innerHTML = events.slice(0, 20).map(function(e) {
           var details = e.details;
           if (typeof details === 'object' && details !== null) details = JSON.stringify(details);
           return '<tr><td>' + (e.time_ago || '-') + '</td><td>' + (e.event_type || '') + '</td><td>' + ((details || '').substring(0, 70)) + '</td></tr>';
         }).join('');
+      } else {
+        document.querySelector('#events-table tbody').innerHTML = '<tr><td colspan="3" class="empty-state">Silence before the storm</td></tr>';
       }
     } catch(e) {}
 
@@ -492,7 +705,9 @@ async function refresh() {
 
 // Init
 rotateQuote();
+rotateWatermark();
 setInterval(rotateQuote, 8000);
+setInterval(rotateWatermark, 15000);
 refresh();
 setInterval(refresh, 5000);
 
