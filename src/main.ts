@@ -75,8 +75,10 @@ class Engine {
         const markets = await scan();
 
         if (markets.length === 0) {
-          log("info", "engine.no_markets", { cycle });
-          await this.sleep(config.scanIntervalSeconds);
+          // No active markets -- sleep longer to avoid hammering API
+          const waitTime = Math.min(config.scanIntervalSeconds * 4, 120);
+          log("info", "engine.no_markets", { cycle, next_check_secs: waitTime });
+          await this.sleep(waitTime);
           continue;
         }
 
