@@ -28,13 +28,13 @@ export const config = {
   apiKey: envStr("KALSHI_API_KEY", ""),
   privateKeyPath: envStr("KALSHI_PRIVATE_KEY_PATH", "./kalshi_private_key.pem"),
 
-  // API URLs
-  baseUrl: envBool("PAPER_TRADE", true)
+  // API URLs -- always use production for market data (public, no auth needed)
+  // Demo API returns stale/incorrect data. Only use demo for order placement.
+  baseUrl: "https://api.elections.kalshi.com/trade-api/v2",
+  orderUrl: envBool("PAPER_TRADE", true)
     ? "https://demo-api.kalshi.co/trade-api/v2"
     : "https://api.elections.kalshi.com/trade-api/v2",
-  wsUrl: envBool("PAPER_TRADE", true)
-    ? "wss://demo-api.kalshi.co/trade-api/ws/v2"
-    : "wss://api.elections.kalshi.com/trade-api/ws/v2",
+  wsUrl: "wss://api.elections.kalshi.com/trade-api/ws/v2",
 
   // Spread & sizing
   minSpreadThreshold: envNum("MIN_SPREAD_THRESHOLD", 3),  // cents
