@@ -22,6 +22,35 @@ export function evaluate(books: MarketBook[]): PairSignal[] {
     // Skip if no data on either side
     if (best_yes_bid <= 0 || best_no_bid <= 0) continue;
 
+    // Skip markets too close to resolution (prices already directional)
+    if (market.seconds_until_close < 600) {
+      log("debug", "strategy.skip_near_expiry", {
+        ticker: market.ticker,
+        seconds_left: Math.round(market.seconds_until_close),
+      });
+      continue;
+    }
+
+    // Skip lopsided markets (one side nearly worthless = near resolution)
+    // Both sides must be >= 10c for a balanced market
+    if (best_yes_bid < 10 || best_no_bid < 10) {
+      log("debug", "strategy.skip_lopsided", {
+        ticker: market.ticker,
+        yes_bid: best_yes_bid,
+        no_bid: best_no_bid,
+      });
+      continue;
+    }
+
+    // Combined bids must be >= 85c (realistic market making territory)
+    if (combined_bid < 85) {
+      log("debug", "strategy.skip_thin", {
+        ticker: market.ticker,
+        combined_bid,
+      });
+      continue;
+    }
+
     // Skip if not enough liquidity
     if (min_bid_size <= 0) continue;
 
