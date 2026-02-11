@@ -117,6 +117,48 @@ export async function scan(): Promise<KalshiMarket[]> {
     }
   }
 
+  // If no active markets found, also fetch initialized ones (to know when next window opens)
+  if (tradeable.length === 0) {
+    for (const asset of config.assets) {
+      try {
+        const initParams = new URLSearchParams({
+          limit: "5",
+          series_ticker: `KX${asset}15M`,
+          status: "initialized",
+        });
+        const initUrl = `${config.baseUrl}/markets?${initParams}`;
+        const initResp = await fetch(initUrl, {
+          headers: { Accept: "application/json" },
+        });
+        if (initResp.ok) {
+          const initData = await initResp.json() as { markets?: Array<Record<string, unknown>> };
+          for (const m of initData.markets ?? []) {
+            const ticker = m.ticker as string;
+            if (!ticker) continue;
+            const parsedAsset = parseAsset(ticker);
+            if (!parsedAsset) continue;
+            const closeTime = parseCloseTime(m as { close_time?: string; expiration_time?: string });
+            if (!closeTime) continue;
+            cache.set(ticker, {
+              ticker,
+              event_ticker: (m.event_ticker as string) ?? "",
+              title: (m.title as string) ?? "",
+              subtitle: "",
+              yes_bid: 0, yes_ask: 0, no_bid: 0, no_ask: 0,
+              last_price: 0, volume: 0, open_interest: 0,
+              status: "initialized",
+              close_time: (m.close_time as string) ?? "",
+              expiration_time: (m.expiration_time as string) ?? "",
+              result: "", category: "crypto",
+              asset: parsedAsset,
+              seconds_until_close: (closeTime.getTime() - Date.now()) / 1000,
+            });
+          }
+        }
+      } catch { /* ignore */ }
+    }
+  }
+
   // Prune expired from cache
   const now = Date.now();
   for (const [ticker, m] of cache) {
@@ -126,8 +168,22 @@ export async function scan(): Promise<KalshiMarket[]> {
     }
   }
 
+  // Also check initialized markets to report when next window opens
+  if (tradeable.length === 0) {
+    const nextInitialized = [...cache.values()]
+      .filter(m => m.status === "initialized")
+      .sort((a, b) => a.seconds_until_close - b.seconds_until_close)[0];
+
+    if (nextInitialized) {
+      log("info", "scanner.waiting", {
+        next_market: nextInitialized.ticker,
+        minutes_until: Math.round(nextInitialized.seconds_until_close / 60),
+      });
+    }
+  }
+
   log("info", "scanner.scan_complete", {
-    total_found: tradeable.length,
+    active: tradeable.length,
     cached: cache.size,
   });
 
