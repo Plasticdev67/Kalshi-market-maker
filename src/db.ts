@@ -89,6 +89,16 @@ export function close(): void {
   }
 }
 
+/** Re-read the DB file from disk (picks up writes from other processes). */
+export async function reload(): Promise<void> {
+  if (!fs.existsSync(config.dbPath)) return;
+  const SQL = await initSqlJs();
+  const buf = fs.readFileSync(config.dbPath);
+  if (_db) _db.close();
+  _db = new SQL.Database(buf);
+  _db.run(SCHEMA);
+}
+
 function db(): SqlJsDb {
   if (!_db) throw new Error("Database not connected");
   return _db;

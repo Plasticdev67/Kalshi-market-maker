@@ -27,6 +27,11 @@ function timeAgo(ts: number): string {
 }
 
 // ---- Kalshi API endpoints (local DB) ----
+// Reload DB from disk before each request so we pick up bot writes
+app.use("/api/kalshi", async (_req, _res, next) => {
+  await db.reload();
+  next();
+});
 
 app.get("/api/kalshi/status", (_req, res) => {
   const pnl = db.getPnlSummary();
