@@ -95,43 +95,51 @@ export class PositionManager {
     noOrder: OrderRecord,
     book: MarketBook,
   ): void {
-    // YES: our bid fills if ask drops to our price or below
-    if (yesOrder.status === "open" && book.best_yes_ask > 0) {
-      if (book.best_yes_ask <= yesOrder.price) {
-        db.updateOrderStatus(yesOrder.order_id, "filled", yesOrder.size);
-        log("info", "position.paper_fill", {
-          order_id: yesOrder.order_id,
-          side: "yes",
-          price: yesOrder.price,
-          size: yesOrder.size,
-          market_ask: book.best_yes_ask,
-        });
-        db.logEvent("order_filled", {
-          order_id: yesOrder.order_id,
-          pair_id: yesOrder.pair_id,
-          side: "yes",
-          price: yesOrder.price,
-          paper: true,
-        });
-      }
-    }
+    // Probability-based fill simulation.
+    // Real market makers at the best bid get filled by natural sell flow.
+    // Model: tighter spread = more activity = higher fill chance per cycle.
+    const sides: Array<{
+      order: OrderRecord;
+      side: string;
+      bestBid: number;
+      bestAsk: number;
+    }> = [
+      { order: yesOrder, side: "yes", bestBid: book.best_yes_bid, bestAsk: book.best_yes_ask },
+      { order: noOrder, side: "no", bestBid: book.best_no_bid, bestAsk: book.best_no_ask },
+    ];
 
-    // NO: our bid fills if ask drops to our price or below
-    if (noOrder.status === "open" && book.best_no_ask > 0) {
-      if (book.best_no_ask <= noOrder.price) {
-        db.updateOrderStatus(noOrder.order_id, "filled", noOrder.size);
+    for (const { order, side, bestBid, bestAsk } of sides) {
+      if (order.status !== "open") continue;
+
+      let fillProb = 0;
+
+      if (bestAsk > 0 && bestAsk <= order.price) {
+        // Ask crossed to our price -- guaranteed fill
+        fillProb = 1.0;
+      } else if (bestBid > 0 && order.price >= bestBid) {
+        // We're at or above best bid (competitive)
+        const spread = bestAsk > 0 ? bestAsk - bestBid : 10;
+        if (spread <= 2) fillProb = 0.35;       // tight spread
+        else if (spread <= 5) fillProb = 0.25;   // normal spread
+        else fillProb = 0.15;                     // wide spread
+      }
+
+      if (fillProb > 0 && Math.random() < fillProb) {
+        db.updateOrderStatus(order.order_id, "filled", order.size);
         log("info", "position.paper_fill", {
-          order_id: noOrder.order_id,
-          side: "no",
-          price: noOrder.price,
-          size: noOrder.size,
-          market_ask: book.best_no_ask,
+          order_id: order.order_id,
+          side,
+          price: order.price,
+          size: order.size,
+          best_bid: bestBid,
+          best_ask: bestAsk,
+          fill_prob: fillProb,
         });
         db.logEvent("order_filled", {
-          order_id: noOrder.order_id,
-          pair_id: noOrder.pair_id,
-          side: "no",
-          price: noOrder.price,
+          order_id: order.order_id,
+          pair_id: order.pair_id,
+          side,
+          price: order.price,
           paper: true,
         });
       }
